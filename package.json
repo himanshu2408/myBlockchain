@@ -1,0 +1,19 @@
+{
+  "name": "myblockchain",
+  "version": "1.0.0",
+  "description": "A fully functional Blockchain prototype using JavaScript/NodeJS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/himanshu2408/myBlockchain.git"
+  },
+  "author": "Himanshu Singh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/himanshu2408/myBlockchain/issues"
+  },
+  "homepage": "https://github.com/himanshu2408/myBlockchain#readme"
+}
