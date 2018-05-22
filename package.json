@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/himanshu2408/myBlockchain/issues"
   },
-  "homepage": "https://github.com/himanshu2408/myBlockchain#readme"
+  "homepage": "https://github.com/himanshu2408/myBlockchain#readme",
+  "dependencies": {
+    "sha256": "^0.2.0"
+  }
 }
