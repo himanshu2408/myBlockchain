@@ -187,6 +187,51 @@ app.post('/register-nodes-bulk', function (req, res) {
     });
 })
 
+
+app.get('/consensus', function (req, res) {
+    const requestPromises = [];
+    himanshucoin.networkNodes.forEach(networkNodeUrl => {
+        const requestOptions = {
+            uri: networkNodeUrl + '/blockchain',
+            method: 'GET',
+            json: true
+        };
+        requestPromises.push(rp(requestOptions));
+
+        Promise.all(requestPromises)
+            .then(blockchains => {
+                const currentChainLength = himanshucoin.chain.length;
+                let maxChainLength = currentChainLength;
+                let newLongestChain = null;
+                let newPendingTransactions = null;
+                blockchains.forEach(blockchain => {
+                    if (blockchain.chain.length > maxChainLength) {
+                        maxChainLength = blockchain.chain.length;
+                        newLongestChain = blockchain.chain;
+                        newPendingTransactions = blockchain.pendingTransactions;
+                    }
+                });
+
+                if (!newLongestChain || (newLongestChain && !himanshucoin.chainIsValid(newLongestChain))) {
+                    res.json({
+                        note: 'Current chain has not been replaced.',
+                        chain: himanshucoin.chain
+                    });
+                }
+                else if (newLongestChain && himanshucoin.chainIsValid(newLongestChain)) {
+                    himanshucoin.chain = newLongestChain;
+                    himanshucoin.pendingTransactions = newPendingTransactions;
+
+                    res.json({
+                        note: 'This chain has been replaced.',
+                        chain: himanshucoin.chain
+                    });
+                }
+            });
+    });
+});
+
+
 app.listen(port, function () {
     console.log(`Listening on port ${port}...`);
 })
