@@ -18,11 +18,36 @@ app.get('/blockchain', function (req, res) {
 })
 
 app.post('/transaction', function (req, res) {
-    const blockIndex = himanshucoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
+    const newTransaction = req.body;
+    const blockIndex = himanshucoin.addTransactionToPendingTransactions(newTransaction);
+
     res.json({
             note: `Trasaction will be added in block ${blockIndex}.`
     });
 })
+
+app.post('/transaction/broadcast', function (req, res) {
+    const newTransaction = himanshucoin.createNewTransaction(req.body.amount, req.body.sender, req.body.recipient);
+    himanshucoin.addTransactionToPendingTransactions(newTransaction);
+
+    const requestPromimses = [];
+    himanshucoin.networkNodes.forEach(networkNodeUrl => {
+        const requestOptions = {
+            uri: networkNodeUrl + '/transaction',
+            method: 'POST',
+            body: newTransaction,
+            json: true
+        };
+
+        requestPromimses.push(rp(requestOptions));
+    });
+    Promise.all(requestPromimses)
+        .then(data => {
+            res.json({
+                note: `Transaction created and broadcast successfully.`
+            });
+        });
+});
 
 app.get('/mine', function (req, res) {
     const previousBlock = himanshucoin.getLastBlock();
@@ -53,7 +78,7 @@ app.post('/register-and-broadcast-node', function (req, res) {
     const regNodesPromises = [];
     himanshucoin.networkNodes.forEach(networkNodeUrl => {
         const requestOptions = {
-            url: networkNodeUrl + '/register-node',
+            uri: networkNodeUrl + '/register-node',
             method: 'POST',
             body: { newNodeUrl : newNodeUrl },
             json: true
@@ -64,7 +89,7 @@ app.post('/register-and-broadcast-node', function (req, res) {
     Promise.all(regNodesPromises)
         .then(data => {
             const bulkRegisterOptions = {
-                url: newNodeUrl + '/register-nodes-bulk',
+                uri: newNodeUrl + '/register-nodes-bulk',
                 method: 'POST',
                 body: { allNetworkNodes: [...himanshucoin.networkNodes, himanshucoin.currentNodeUrl] },
                 json: true
