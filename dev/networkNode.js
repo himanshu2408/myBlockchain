@@ -62,11 +62,63 @@ app.get('/mine', function (req, res) {
     himanshucoin.createNewTransaction(12.5, '00', nodeAddress)
 
     const newBlock = himanshucoin.createNewBlock(nonce, previousBlockHash, blockHash);
-    res.json({
-        note: "New block mined successfully",
-        block: newBlock
+
+    const requestPromises = [];
+    himanshucoin.networkNodes.forEach(networkNodeUrl => {
+        const requestOptions = {
+            uri: networkNodeUrl + '/receive-new-block',
+            method: 'POST',
+            body: { newBlock: newBlock },
+            json: true
+        };
+        requestPromises.push(rp(requestOptions));
     });
+
+    Promise.all(requestPromises)
+        .then(data => {
+            const requestOptions = {
+                uri: himanshucoin.currentNodeUrl + '/transaction/broadcast',
+                method: 'POST',
+                body: {
+                    amount: 12.5,
+                    sender: "00",
+                    recipient: nodeAddress
+                },
+                json: true
+            };
+            return rp(requestOptions);
+        })
+        .then(data => {
+            res.json({
+                note: "New block mined and broadcast successfully.",
+                block: newBlock
+            });
+        })
 })
+
+
+app.post('/receive-new-block', function (req, res) {
+    const newBlock = req.body.newBlock;
+    const lastBlock = himanshucoin.getLastBlock();
+    const correctHash = lastBlock.hash === newBlock.previousBlockHash;
+    const correctIndex = lastBlock['index'] + 1 === newBlock['index'];
+
+    if (correctHash && correctIndex) {
+        himanshucoin.chain.push(newBlock);
+        himanshucoin.pendingTransactions = [];
+        res.json({
+            note: `New Block received and accepted.`,
+            newBlock: newBlock
+        });
+    }
+    else {
+        res.json({
+            note: `New Block rejected.`,
+            newBlock: newBlock
+        })
+    }
+});
+
 
 // register a node and broadcast it to whole network
 app.post('/register-and-broadcast-node', function (req, res) {
