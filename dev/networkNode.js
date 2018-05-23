@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const Blockchain = require('./blockchain');
 const uuid = require('uuid/v1');
 const port = process.argv[2];
+const rp = require('request-promise');
 
 const nodeAddress = uuid().split('-').join('');
 
@@ -42,6 +43,44 @@ app.get('/mine', function (req, res) {
     });
 })
 
+// register a node and broadcast it to whole network
+app.post('/register-and-broadcast-node', function (req, res) {
+    const newNodeUrl = req.body.newNodeUrl;
+    if (himanshucoin.networkNodes.indexOf(newNodeUrl) == -1) {
+        himanshucoin.networkNodes.push(newNodeUrl);
+    }
+    const regNodesPromises = [];
+    himanshucoin.networkNodes.forEach(networkNodeUrl => {
+        const requestOptions = {
+            url: networkNodeUrl + '/register-node',
+            method: 'POST',
+            body: { newNodeUrl : newNodeUrl },
+            json: true
+        };
+        regNodesPromises.push(rp(requestOptions));
+    });
+
+    Promise.all(regNodesPromise)
+        .then(data => {
+
+        });
+})
+
+// register  a node to the network
+app.post('/register-node', function (req, res) {
+    const newNodeUrl = req.body.newNodeUrl;
+
+
+
+})
+
+
+// register  multiple nodes to the network
+app.post('/register-nodes-bulk', function (req, res) {
+    const newNodeUrl = req.body.newNodeUrl;
+
+
+})
 
 app.listen(port, function () {
     console.log(`Listening on port ${port}...`);
