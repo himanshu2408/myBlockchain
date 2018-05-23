@@ -46,6 +46,7 @@ app.get('/mine', function (req, res) {
 // register a node and broadcast it to whole network
 app.post('/register-and-broadcast-node', function (req, res) {
     const newNodeUrl = req.body.newNodeUrl;
+    
     if (himanshucoin.networkNodes.indexOf(newNodeUrl) == -1) {
         himanshucoin.networkNodes.push(newNodeUrl);
     }
@@ -60,26 +61,53 @@ app.post('/register-and-broadcast-node', function (req, res) {
         regNodesPromises.push(rp(requestOptions));
     });
 
-    Promise.all(regNodesPromise)
+    Promise.all(regNodesPromises)
         .then(data => {
+            const bulkRegisterOptions = {
+                url: newNodeUrl + '/register-nodes-bulk',
+                method: 'POST',
+                body: { allNetworkNodes: [...himanshucoin.networkNodes, himanshucoin.currentNodeUrl] },
+                json: true
+            };
 
+            return rp(bulkRegisterOptions);
+        })
+        .then(data => {
+            res.json({
+                   note: `New Node registered with network successfully.`
+            });
         });
 })
 
 // register  a node to the network
 app.post('/register-node', function (req, res) {
     const newNodeUrl = req.body.newNodeUrl;
-
-
-
+    const nodeNotAlreadyPresent = himanshucoin.networkNodes.indexOf(newNodeUrl) == -1;
+    const notCurrentNode = himanshucoin.currentNodeUrl !== newNodeUrl;
+    if (nodeNotAlreadyPresent && notCurrentNode) {
+        himanshucoin.networkNodes.push(newNodeUrl);
+    }
+    res.json({
+        note: `New Node registered successfully.`
+    });
+    
 })
 
 
 // register  multiple nodes to the network
 app.post('/register-nodes-bulk', function (req, res) {
-    const newNodeUrl = req.body.newNodeUrl;
+    const allNetworkNodes = req.body.allNetworkNodes;
 
-
+    allNetworkNodes.forEach(networkNodeUrl => {
+        const nodeNotAlreadyPresent = himanshucoin.networkNodes.indexOf(networkNodeUrl) == -1;
+        const notCurrentNode = himanshucoin.currentNodeUrl !== networkNodeUrl;
+        if (nodeNotAlreadyPresent && notCurrentNode){
+            himanshucoin.networkNodes.push(networkNodeUrl);
+        }
+    });
+    res.json({
+        note: `Bulk registration successfull.`
+    });
 })
 
 app.listen(port, function () {
